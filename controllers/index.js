@@ -19,22 +19,18 @@ module.exports = function (router) {
             return res.status(400).json({ status: 'Error', message: 'Missing argument' })
         }
         
-        // Airports deve ser um número e deve ser no mínimo 3
         if (isNaN(airports) || airports < 3) {
             return res.status(400).json({ status: 'Error', message: 'Provide a valid number of airports' })
         };
-        
-        // Clouds deve ser um número e deve ser no mínimo 4 
+
         if (isNaN(clouds) || clouds < 4) {
             return res.status(400).json({ status: 'Error', message: 'Provide a valid number of clouds' });
         }
         
-        // Height deve ser um número e deve ser no mínimo 10
         if (isNaN(height) || height < 10) {
             return res.status(400).json({ status: 'Error', message: 'Provide a valid height' })
         }
         
-        // Width deve ser um número e deve ser no mínimo 10
         if (isNaN(width) || width < 10) {
             return res.status(400).json({ status: 'Error', message: 'Provide a valid width' })
         }
@@ -46,7 +42,6 @@ module.exports = function (router) {
         
         // Nossa grid (a estrutura de dado será um array)
         // Iniciamos dizendo a quantidade de quadradinhos que nossa grid vai ter
-        // e esses quadradinhos serão distribuídos linearmente no Array
         const grid = start(gridBlocksQuantity);
         
         // Ah, e estamos passando grid por referência aqui
@@ -112,7 +107,6 @@ function distributeAirportsAndClouds(grid, toDistribute) {
         
         // Vai decidir aleatóriamente a posição da cloud
         // Porém, precisamos colocar a cloud em um lugar que não tenha um Airport
-        
         while (true) {
             const randomIdx = Math.floor(Math.random() * grid.length);
             
@@ -132,28 +126,33 @@ const isInsideGrid = (size, num) => num >= 0 && num < size;
 // Calcula a propagação das nuvens
 function cloudPropagation(grid, infoData) {
 
-    // Vamos tirar daqui umas variáveis que não são globais
+    // Vamos pegar aqui variáveis que precisamos e não temos acesso
     let { height, width, airports } = infoData;
 
     // AGORA, o caldo engrossou, vamos às variáveis
-    var history = [] // Vamos registrar cada um dos dias
+
+    var history = [] // Vamos registrar o estado de cada um dos dias
     
     // Controlar os dias
     var day = 0;
     
-    // Quantos dias até o primeiro aeroporto ser coberto e quantos até todos
+    // Quantos dias até o primeiro aeroporto ser coberto e quantos até todos serem
     var arrivedFirstAirport = { didArrive: false, day: null };
     var arrivedAllTheAirports = { didArrive: false, day: null };
     
     // Começamos o cálculo
+    // Enquanto as nuvens não alcançarem todos os Aeroportos, o loop continua
     while (!arrivedAllTheAirports.didArrive) {
         day++;
         
+        // No começo de todos os dias setamos que as nuvens já não são mais "new clouds"
+        // Precisamos disso pra que as novas nuvens não se propaguem até um dia depois
         for (var idx = 0; idx < grid.length; idx ++) {
             grid[idx].newCloud = false;
         }
         
-
+        // Clonamos o estado da grid no começo do dia e no final do dia,
+        // E usamos o lodash para fazer um deep clone e não uma atribuição por referência
         const initial = lodash.cloneDeep(grid);
 
         // Vamos percorrer todos os blocos do grid, e cada loop do while é um dia
@@ -163,6 +162,8 @@ function cloudPropagation(grid, infoData) {
             if (grid[position].block === 'empty' || grid[position].block === 'airport') continue;
             
             // Se for cloud...
+            // o grid position está no formato { block, newCloud } para que possamos controlar e 
+            // propagar apenas as nuvens que já estavam no grid no começo do dia
             if (grid[position].block === 'cloud' && !grid[position].newCloud) {
 
                 // Temos que propagar a cloud pros lados, e um bloco pra cima e baixo
@@ -173,7 +174,7 @@ function cloudPropagation(grid, infoData) {
                 var down = Number(position) + Number(width);
                 var left = Number(position) - 1;
 
-                // UP
+                // CIMA
 
                 // Vamos ver o que tem na área da propagação da nuvem e ser for um airport
                 if (grid[up] && grid[up].block && grid[up].block === 'airport') {
@@ -196,6 +197,10 @@ function cloudPropagation(grid, infoData) {
                     }
                 }
 
+                // Aqui o movimento acontece
+                // Vemos se o bloco existe e é válido dentro da grid, e vemos se ele é uma cloud
+                // Porque se for uma cloud, não vamos mexer, porque se for uma new Cloud ela nunca
+                // Sairá do estado de new Cloud, e não queremos isso, queremos que ela propague um dia depois
                 if (
                     grid[up] && 
                     grid[up].block && 
@@ -206,26 +211,19 @@ function cloudPropagation(grid, infoData) {
                     grid[up].newCloud = true;
                 }
 
-                // RIGHT
+                // DIREITA
 
-                // Para checar se a propriedade block existe, ou seja
-                // se essa posição é uma posição válida no array
+                // A partir de agora é a mesma coisa, mas pras outras direções
+
                 if (grid[right] && grid[right].block && grid[right].block === 'airport') {
 
-                    // Foi o primeiro aeroporto que as nuvens alcançaram?
                     if (!arrivedFirstAirport.didArrive) {
-
-                        // Se foi, a gente seta o dia em que isso aconteceu, e afirma que chegou
                         arrivedFirstAirport = { day, didArrive: true };
                     } 
 
-                    // De qualquer forma, a gente decrementa o número de aeroportos que faltam
                     airports -= 1;
 
-                    // E checamos se a nuvem já alcançou todos os aeroportos
                     if (airports === 0) {
-
-                        // Anotamos o dia que isso aconteceu e terminamos o cálculo
                         arrivedAllTheAirports = { day, didArrive: true }
                     }
                 }
@@ -240,24 +238,17 @@ function cloudPropagation(grid, infoData) {
                     grid[right].newCloud = true;
                 }
 
-                // DOWN
+                // BAIXO
 
                 if (grid[down] && grid[down].block && grid[down].block === 'airport') {
 
-                    // Foi o primeiro aeroporto que as nuvens alcançaram?
                     if (!arrivedFirstAirport.didArrive) {
-
-                        // Se foi, a gente seta o dia em que isso aconteceu, e afirma que chegou
                         arrivedFirstAirport = { day, didArrive: true };
                     } 
 
-                    // De qualquer forma, a gente decrementa o número de aeroportos que faltam
                     airports -= 1;
 
-                    // E checamos se a nuvem já alcançou todos os aeroportos
                     if (airports === 0) {
-
-                        // Anotamos o dia que isso aconteceu e terminamos o cálculo
                         arrivedAllTheAirports = { day, didArrive: true }
                     }
                 }
@@ -272,24 +263,17 @@ function cloudPropagation(grid, infoData) {
                     grid[down].newCloud = true;
                 }
 
-                // LEFT
+                // ESQUERDA
 
                 if (grid[left] && grid[left].block && grid[left].block === 'airport') {
 
-                    // Foi o primeiro aeroporto que as nuvens alcançaram?
                     if (!arrivedFirstAirport.didArrive) {
-
-                        // Se foi, a gente seta o dia em que isso aconteceu, e afirma que chegou
                         arrivedFirstAirport = { day, didArrive: true };
                     } 
 
-                    // De qualquer forma, a gente decrementa o número de aeroportos que faltam
                     airports -= 1;
 
-                    // E checamos se a nuvem já alcançou todos os aeroportos
                     if (airports === 0) {
-
-                        // Anotamos o dia que isso aconteceu e terminamos o cálculo
                         arrivedAllTheAirports = { day, didArrive: true }
                     }
                 }
@@ -307,6 +291,7 @@ function cloudPropagation(grid, infoData) {
             }
         }
 
+        // Para comparar com o começo do dia e checar se a resposta está correta
         const final = lodash.cloneDeep(grid);
 
         history.push({ day, grid: { initial, final } });
