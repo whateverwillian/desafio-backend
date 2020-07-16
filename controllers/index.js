@@ -120,9 +120,6 @@ function distributeAirportsAndClouds(grid, toDistribute) {
     }
 }
 
-// Recebe o tamanho do array grid e checha se num uma posição válida dentro do grid
-const isInsideGrid = (size, num) => num >= 0 && num < size;
-
 // Calcula a propagação das nuvens
 function cloudPropagation(grid, infoData) {
 
@@ -174,120 +171,48 @@ function cloudPropagation(grid, infoData) {
                 var down = Number(position) + Number(width);
                 var left = Number(position) - 1;
 
-                // CIMA
+                // Vai loopar pelas direções, e fazer a movimentação
+                const directions = [up, right, down, left];
 
                 // Vamos ver o que tem na área da propagação da nuvem e ser for um airport
-                if (grid[up] && grid[up].block && grid[up].block === 'airport') {
+                for (var currentPosition = 0; currentPosition < directions.length; currentPosition ++) {
+                    if (
+                        grid[directions[currentPosition]] && 
+                        grid[directions[currentPosition]].block && 
+                        grid[directions[currentPosition]].block === 'airport'
+                    ) {
 
-                    // Foi o primeiro aeroporto que as nuvens alcançaram?
-                    if (!arrivedFirstAirport.didArrive) {
-
-                        // Se foi, a gente seta o dia em que isso aconteceu, e afirma que chegou
-                        arrivedFirstAirport = { day, didArrive: true };
-                    } 
-
-                    // De qualquer forma, a gente decrementa o número de aeroportos que faltam
-                    airports -= 1;
-
-                    // E checamos se a nuvem já alcançou todos os aeroportos
-                    if (airports === 0) {
-
-                        // Anotamos o dia que isso aconteceu e terminamos o cálculo
-                        arrivedAllTheAirports = { day, didArrive: true }
+                        // Foi o primeiro aeroporto que as nuvens alcançaram?
+                        if (!arrivedFirstAirport.didArrive) {
+    
+                            // Se foi, a gente seta o dia em que isso aconteceu, e afirma que chegou
+                            arrivedFirstAirport = { day, didArrive: true };
+                        } 
+    
+                        // De qualquer forma, a gente decrementa o número de aeroportos que faltam
+                        airports -= 1;
+    
+                        // E checamos se a nuvem já alcançou todos os aeroportos
+                        if (airports === 0) {
+    
+                            // Anotamos o dia que isso aconteceu e terminamos o cálculo
+                            arrivedAllTheAirports = { day, didArrive: true }
+                        }
+                    }
+    
+                    // Aqui o movimento acontece
+                    // Vemos se o bloco existe e é válido dentro da grid, e vemos se ele é uma cloud
+                    // Porque se for uma cloud, não vamos mexer, porque se for uma new Cloud ela nunca
+                    // Sairá do estado de new Cloud, e não queremos isso, queremos que ela propague um dia depois
+                    if (
+                        grid[directions[currentPosition]] && 
+                        grid[directions[currentPosition]].block && 
+                        grid[directions[currentPosition]].block !== 'cloud'
+                    ) {
+                        grid[directions[currentPosition]].block  = 'cloud'
+                        grid[directions[currentPosition]].newCloud = true;
                     }
                 }
-
-                // Aqui o movimento acontece
-                // Vemos se o bloco existe e é válido dentro da grid, e vemos se ele é uma cloud
-                // Porque se for uma cloud, não vamos mexer, porque se for uma new Cloud ela nunca
-                // Sairá do estado de new Cloud, e não queremos isso, queremos que ela propague um dia depois
-                if (
-                    grid[up] && 
-                    grid[up].block && 
-                    isInsideGrid(grid.length, up) && 
-                    grid[up].block !== 'cloud'
-                ) {
-                    grid[up].block  = 'cloud'
-                    grid[up].newCloud = true;
-                }
-
-                // DIREITA
-
-                // A partir de agora é a mesma coisa, mas pras outras direções
-
-                if (grid[right] && grid[right].block && grid[right].block === 'airport') {
-
-                    if (!arrivedFirstAirport.didArrive) {
-                        arrivedFirstAirport = { day, didArrive: true };
-                    } 
-
-                    airports -= 1;
-
-                    if (airports === 0) {
-                        arrivedAllTheAirports = { day, didArrive: true }
-                    }
-                }
-
-                if (
-                    grid[right] && 
-                    grid[right].block && 
-                    isInsideGrid(grid.length, right) &&
-                    grid[right].block !== 'cloud'
-                ) {
-                    grid[right].block = 'cloud'
-                    grid[right].newCloud = true;
-                }
-
-                // BAIXO
-
-                if (grid[down] && grid[down].block && grid[down].block === 'airport') {
-
-                    if (!arrivedFirstAirport.didArrive) {
-                        arrivedFirstAirport = { day, didArrive: true };
-                    } 
-
-                    airports -= 1;
-
-                    if (airports === 0) {
-                        arrivedAllTheAirports = { day, didArrive: true }
-                    }
-                }
-
-                if (
-                    grid[down] && 
-                    grid[down].block && 
-                    isInsideGrid(grid.length, down) &&
-                    grid[down].block !== 'cloud'    
-                ) {
-                    grid[down].block = 'cloud';
-                    grid[down].newCloud = true;
-                }
-
-                // ESQUERDA
-
-                if (grid[left] && grid[left].block && grid[left].block === 'airport') {
-
-                    if (!arrivedFirstAirport.didArrive) {
-                        arrivedFirstAirport = { day, didArrive: true };
-                    } 
-
-                    airports -= 1;
-
-                    if (airports === 0) {
-                        arrivedAllTheAirports = { day, didArrive: true }
-                    }
-                }
-
-                if (
-                    grid[left] && 
-                    grid[left].block && 
-                    isInsideGrid(grid.length, left) &&
-                    grid[left].block !== 'cloud'    
-                ) {
-                    grid[left].block = 'cloud';
-                    grid[left].newCloud = true;
-                }
-
             }
         }
 
