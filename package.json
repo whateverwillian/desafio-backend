@@ -20,7 +20,7 @@
     },
     "devDependencies": {
         "eslint-config-airbnb": "^18.2.0",
-        "grunt": "^0.4.5",
+        "grunt": "^1.5.2",
         "grunt-cli": "^0.1.13",
         "grunt-config-dir": "^0.3.2",
         "grunt-contrib-clean": "^0.6.0",
